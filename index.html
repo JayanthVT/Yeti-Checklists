@@ -71,6 +71,13 @@ select.dec.nogo{color:var(--fail)}
 .sigrow{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
 .sigrow span{font-size:11px;color:var(--sub)}
 .sigclear{background:none;border:1px solid var(--line);border-radius:6px;color:var(--accent);font-size:13px;cursor:pointer;padding:6px 12px;min-height:34px}
+.photowrap{margin-top:4px}
+.photogrid{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.photocell{position:relative;width:92px;height:92px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.photocell img{width:100%;height:100%;object-fit:cover;display:block}
+.photodel{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:14px;line-height:1;cursor:pointer}
+.photobtn{position:relative;display:inline-block;overflow:hidden;text-align:center;width:100%}
+.photobtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .pdf-preview-card{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;}
 .pdf-preview-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;}
 .pdf-preview-title{font-size:14px;font-weight:700;}
@@ -121,8 +128,8 @@ select.dec.nogo{color:var(--fail)}
 /* ---------- DATA ---------- */
 const GNG_HEADER=[["uavId","UAV ID"],["flightDate","Flight Date"],["flightPlace","Flight Place"],["filledBy","Filled By"]];
 const GNG=[
-["Weather",[["Wind Speed","≤ 20 km/h (or aircraft limit)","Above limit","Safety Officer"],
-["Visibility","≥ 2 km","Low visibility / fog","Safety Officer"],
+["Weather",[["Wind Speed","<= 20 km/h (or aircraft limit)","Above limit","Safety Officer"],
+["Visibility",">= 2 km","Low visibility / fog","Safety Officer"],
 ["Rain","No rain","Rain / thunderstorm","Safety Officer"]]],
 ["Airspace",[["Airspace Clearance","Site cleared and secured","Unauthorized aircraft / drones","Safety Officer"],
 ["Trial Area Security","Safety perimeter enforced","Public entry in range","Safety Officer"]]],
@@ -130,7 +137,7 @@ const GNG=[
 ["Control Surfaces","Free movement and correct direction","Restricted movement","Mechanical Integration Lead"]]],
 ["Propulsion System",[["Propeller","No cracks or damage","Damaged propeller","Mechanical Integration Lead"],
 ["Motor / ESC","Functional and calibrated","Overheating / fault","Electrical Integration Lead"]]],
-["Power System",[["Battery Level","≥ 95% before launch","Low battery","ESS In-charge"],
+["Power System",[["Battery Level",">= 95% before launch","Low battery","ESS In-charge"],
 ["Voltage Stability","Within operating limits","Voltage drop / anomaly","ESS In-charge"]]],
 ["Avionics",[["Flight Controller","Booted and healthy","Sensor failure","Autopilot Engineer"],
 ["GPS Lock","Minimum 8–10 satellites","No GPS lock","Autopilot Engineer"],
@@ -235,7 +242,8 @@ const DLY=[
  {sl:82,group:"Sound Meter Functionality",text:"Sound recording is ok"},
  {sl:83,group:"Communication Check",text:"Communication check completed with pilot and responsible team members."}]],
 ["10. Other Details",[
- {sl:84,text:"Other details / checker signature",extra:[["checkerSig","Checker Signature","sig"]]}]]
+ {sl:84,text:"Other details / checker signature",footer:true,extra:[["checkerSig","Checker Signature","sig"]]},
+ {sl:85,text:"Photos (optional) — attach any relevant photos",footer:true,type:"photo"}]]
 ];
 
 const LOGO_DATA_URL=document.querySelector('.topbar img').src;
@@ -253,6 +261,46 @@ function loadDraft(t){try{const r=localStorage.getItem(LS_KEY(t));return r?JSON.
 function saveDraft(){try{localStorage.setItem(LS_KEY(cur),JSON.stringify(data));saveLastValues();toast("Draft saved");}catch(e){}}
 function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>el.classList.remove('show'),1200);}
 
+function resizeImageFile(file,maxDim,quality){
+  return new Promise((res,rej)=>{
+    const img=new Image();const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>=h&&w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}
+      else if(h>w&&h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('load failed'));};
+    img.src=url;
+  });
+}
+function mountPhotoPicker(container,initial,onChange){
+  const wrap=document.createElement('div');wrap.className='photowrap';
+  wrap.innerHTML=`<div class="photogrid"></div>
+    <label class="btn secondary photobtn">📷 Add Photo<input type="file" accept="image/*" class="photoinput"></label>`;
+  container.appendChild(wrap);
+  let photos=(initial||[]).slice();
+  const grid=wrap.querySelector('.photogrid');
+  function renderGrid(){
+    grid.innerHTML='';
+    photos.forEach((src,i)=>{
+      const cell=document.createElement('div');cell.className='photocell';
+      cell.innerHTML=`<img src="${src}"><button type="button" class="photodel">×</button>`;
+      cell.querySelector('.photodel').onclick=()=>{photos.splice(i,1);renderGrid();onChange(photos);};
+      grid.appendChild(cell);
+    });
+  }
+  renderGrid();
+  wrap.querySelector('.photoinput').onchange=async e=>{
+    const file=e.target.files[0];if(!file)return;
+    try{const dataUrl=await resizeImageFile(file,1000,0.72);photos.push(dataUrl);renderGrid();onChange(photos);}
+    catch(err){toast('Could not add that photo');}
+    e.target.value='';
+  };
+}
 function mountSigPad(container,label,initialDataUrl,onChange){
   const wrap=document.createElement('div');wrap.className='sigwrap';
   wrap.innerHTML=`<label>${label}</label><canvas class="sigpad"></canvas><div class="sigrow"><span>Draw with finger / mouse</span><button type="button" class="sigclear">Clear</button></div>`;
@@ -307,8 +355,8 @@ function renderHome(){
   const h=document.getElementById('home');
   h.innerHTML='';
   const items=[
-    {id:'gng',title:'Flight Trial GO / NO-GO Decision Matrix',sub:'IF_YETI_TD0_FTR_SOP_002 · 22 checks across 10 categories',count:GNG.reduce((a,c)=>a+c[1].length,0)},
-    {id:'dly',title:'Daily Airworthiness Checklist',sub:'IF_YETI_TD0_FTR_CKT_005 · 84 checks across 10 sections',count:DLY.reduce((a,s)=>a+s[1].length,0)}
+    {id:'gng',title:'Flight Trial GO / NO-GO Decision Matrix',sub:'IF_YETI_TD0_FTR_SOP_002 · '+GNG.reduce((a,c)=>a+c[1].length,0)+' checks across '+GNG.length+' categories',count:GNG.reduce((a,c)=>a+c[1].length,0)},
+    {id:'dly',title:'Daily Airworthiness Checklist',sub:'IF_YETI_TD0_FTR_CKT_005 · '+DLY.flatMap(s=>s[1]).filter(it=>!it.footer).length+' checks across '+DLY.length+' sections',count:DLY.reduce((a,s)=>a+s[1].length,0)}
   ];
   items.forEach(it=>{
     const d=loadDraft(it.id);
@@ -414,9 +462,17 @@ function renderStep(){
       const k='dly_'+item.sl;
       const d=data[k]||{};
       const it=document.createElement('div');it.className='item';
+      if(item.type==='photo'){
+        it.innerHTML=`<div class="txt">#${item.sl} — ${item.text}</div>`;
+        mountPhotoPicker(it,d.photos||[],val=>{d.photos=val;data[k]=d;});
+        body.appendChild(it);
+        return;
+      }
       let html=item.group?`<div class="grp">${item.group}</div>`:'';
       html+=`<div class="txt">#${item.sl} — ${item.text}</div>`;
-      html+=`<div class="pf"><button data-v="pass" class="${d.result==='pass'?'sel-pass':''}">✓ Pass</button><button data-v="fail" class="${d.result==='fail'?'sel-fail':''}">✕ Fail</button></div>`;
+      if(!item.footer){
+        html+=`<div class="pf"><button data-v="pass" class="${d.result==='pass'?'sel-pass':''}">✓ Pass</button><button data-v="fail" class="${d.result==='fail'?'sel-fail':''}">✕ Fail</button></div>`;
+      }
       const textExtras=(item.extra||[]).filter(x=>x[2]!=='sig');
       const sigExtras=(item.extra||[]).filter(x=>x[2]==='sig');
       if(textExtras.length){
@@ -424,11 +480,13 @@ function renderStep(){
       }
       html+=`<textarea class="remarks" rows="1" placeholder="Remarks">${d.remarks||''}</textarea>`;
       it.innerHTML=html;
-      it.querySelectorAll('.pf button').forEach(btn=>btn.onclick=()=>{
-        d.result=d.result===btn.dataset.v?null:btn.dataset.v;data[k]=d;
-        it.querySelectorAll('.pf button').forEach(b=>b.className='');
-        if(d.result)it.querySelector(`.pf button[data-v="${d.result}"]`).className=d.result==='pass'?'sel-pass':'sel-fail';
-      });
+      if(!item.footer){
+        it.querySelectorAll('.pf button').forEach(btn=>btn.onclick=()=>{
+          d.result=d.result===btn.dataset.v?null:btn.dataset.v;data[k]=d;
+          it.querySelectorAll('.pf button').forEach(b=>b.className='');
+          if(d.result)it.querySelector(`.pf button[data-v="${d.result}"]`).className=d.result==='pass'?'sel-pass':'sel-fail';
+        });
+      }
       if(textExtras.length)it.querySelectorAll('[data-x]').forEach(inp=>inp.oninput=e=>{d[e.target.dataset.x]=e.target.value;data[k]=d;});
       it.querySelector('.remarks').oninput=e=>{d.remarks=e.target.value;data[k]=d;};
       sigExtras.forEach(([k2,lbl])=>mountSigPad(it,lbl,d[k2]||null,val=>{d[k2]=val;data[k]=d;}));
@@ -469,7 +527,7 @@ function renderReview(){
       <div class="summary-row"><span>NO-GO</span><b class="fail">${nogo}</b></div>
       <div class="summary-row"><span>Not yet decided</span><b>${blank}</b></div>`;
   }else{
-    const all=DLY.flatMap(s=>s[1]);
+    const all=DLY.flatMap(s=>s[1]).filter(it=>!it.footer);
     let pass=0,fail=0,blank=0;
     all.forEach(it=>{const d=data['dly_'+it.sl]||{};if(d.result==='pass')pass++;else if(d.result==='fail')fail++;else blank++;});
     el.innerHTML=`<div class="summary-row"><span>Total items</span><b>${all.length}</b></div>
@@ -570,7 +628,7 @@ function buildPdf(){
       didDrawPage:()=>pageHeader(doc,title,docNo)});
     const rows=[];
     DLY.forEach(([sec,items])=>{
-      const filtered=items.filter(it=>it.sl!==84);
+      const filtered=items.filter(it=>!it.footer);
       if(!filtered.length)return;
       rows.push([{content:sec,colSpan:6,styles:{fillColor:BRAND_DARK,textColor:255,fontStyle:'bold',fontSize:7.5}}]);
       let i=0;
@@ -614,6 +672,23 @@ function buildPdf(){
     doc.setFont(undefined,'normal');doc.setFontSize(7.5);
     doc.text(doc.splitTextToSize(d84.remarks||'—',288),46,footY+28);
     if(d84.checkerSig)doc.addImage(d84.checkerSig,'PNG',351,footY+20,150,46);
+    const photos=(data['dly_85']&&data['dly_85'].photos)||[];
+    if(photos.length){
+      let py=footY+74+22;
+      if(py>700){doc.addPage();pageHeader(doc,title,docNo);py=74;}
+      doc.setFont(undefined,'bold');doc.setFontSize(10);doc.setTextColor(0,0,0);
+      doc.text('Photos',40,py);
+      py+=12;
+      const cellW=165,cellH=125,gap=12,perRow=3;
+      photos.forEach((src,i)=>{
+        const col=i%perRow;
+        if(col===0&&i>0)py+=cellH+gap;
+        if(py+cellH>760){doc.addPage();pageHeader(doc,title,docNo);py=74;}
+        const x=40+col*(cellW+gap);
+        doc.setDrawColor(210,210,210);doc.setLineWidth(0.6);doc.rect(x,py,cellW,cellH);
+        try{doc.addImage(src,'JPEG',x+3,py+3,cellW-6,cellH-6);}catch(e){}
+      });
+    }
     fname=`DailyAirworthiness_${slug(data.uavId)}_${slug(data.flightDate)}.pdf`;
   }
   return {blob:doc.output('blob'),fname};
