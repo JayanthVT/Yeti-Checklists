@@ -54,7 +54,6 @@ body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:-ap
 .pf button.sel-fail{background:var(--fail);color:#fff;border-color:var(--fail)}
 .pf button.sel-na{background:#6b7280;color:#fff;border-color:#6b7280}
 .item.is-na .txt,.item.is-na .mini,.item.is-na .remarks{opacity:.5}
-.grpna{display:block;width:100%;margin:2px 0 12px;padding:12px;border-radius:9px;border:1px dashed var(--sub);background:transparent;color:var(--sub);font-size:14px;font-weight:600;min-height:44px}
 .mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .mini input{padding:13px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:16px;min-height:46px}
 .remarks{width:100%;padding:13px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:15px;min-height:46px}
@@ -155,7 +154,7 @@ const GNG=[
 ["Emergency Response","Recovery team ready","No recovery plan","Safety Officer"]]]
 ];
 
-const DLY_HEADER=[["trialPhase","Trial Phase"],["trialStage","Trial Stage"],["flightPlace","Flight Place"],["flightDate","Flight Date"]];
+const DLY_HEADER=[["uavId","UAV ID"],["uavName","UAV Name"],["trialPhase","Trial Phase"],["trialStage","Trial Stage"],["flightPlace","Flight Place"],["flightDate","Flight Date"]];
 const WING=["Cracks, dents and aesthetics","Screws fitment and loose parts","Antenna mounting, routing and","FOD in the wing"];
 function wing(n,grp){return WING.map((t,i)=>({sl:"4."+n+"."+(i+1),group:grp,text:t}));}
 const DLY=[
@@ -223,7 +222,7 @@ const DLY=[
  {sl:"8.2",group:"Sound Meter Functionality",text:"Sound recording is ok"},
  {sl:"8.3",group:"Communication Check",text:"Communication check completed with pilot and responsible team members."}]],
 ["9. Other details",[
- {sl:"9",text:"Other details / Checker + Reviewer sign-off",footer:true,extra:[["checkerSig","Checker","sig"],["reviewerSig","Reviewer","sig"]]},
+ {sl:"9",text:"Other details / Checker sign-off",footer:true,extra:[["checkerSig","Checker Signature","sig"]]},
  {sl:"9.1",text:"Photos (optional) — attach any relevant photos",footer:true,type:"photo"}]]
 ];
 const isCheckItem=it=>!it.footer&&it.type!=='values'&&it.type!=='photo';
@@ -372,7 +371,7 @@ const LAST_KEY='yeti_last_values';
 function loadLastValues(){try{return JSON.parse(localStorage.getItem(LAST_KEY)||'{}');}catch(e){return {};}}
 function saveLastValues(){try{
   const prev=loadLastValues();
-  ['uavId','trialPhase','trialStage','flightPlace'].forEach(k=>{if(data[k])prev[k]=data[k];});
+  ['uavId','uavName','trialPhase','trialStage','flightPlace'].forEach(k=>{if(data[k])prev[k]=data[k];});
   localStorage.setItem(LAST_KEY,JSON.stringify(prev));
 }catch(e){}}
 
@@ -439,20 +438,7 @@ function renderStep(){
       body.appendChild(it);
     });
   }else if(s.type==='dly'){
-    s.items.forEach((item,idx)=>{
-      if(item.group&&isCheckItem(item)&&(idx===0||s.items[idx-1].group!==item.group)){
-        const members=s.items.filter(x=>x.group===item.group&&isCheckItem(x));
-        if(members.length>=2){
-          const allNa=members.every(x=>(data['dly_'+x.sl]||{}).result==='na');
-          const gb=document.createElement('button');gb.type='button';gb.className='grpna';
-          gb.textContent=allNa?`Undo Not Available for "${item.group}"`:`Mark all of "${item.group}" as Not Available (not installed)`;
-          gb.onclick=()=>{
-            members.forEach(x=>{const kk='dly_'+x.sl;const dd=data[kk]||{};dd.result=allNa?null:'na';data[kk]=dd;});
-            saveDraft();renderStep();
-          };
-          body.appendChild(gb);
-        }
-      }
+    s.items.forEach(item=>{
       const k='dly_'+item.sl;
       const d=data[k]||{};
       const it=document.createElement('div');it.className='item';
@@ -701,14 +687,10 @@ function buildPdf(){
     doc.rect(335,footY,180,84);
     doc.setFont(undefined,'bold');doc.setFontSize(8);doc.setTextColor(0,0,0);
     doc.text('Other Details / Remarks',46,footY+14);
-    doc.text('Checker + Reviewer',341,footY+14);
+    doc.text('Checker Signature',341,footY+14);
     doc.setFont(undefined,'normal');doc.setFontSize(7.5);
     doc.text(doc.splitTextToSize(d9.remarks||'—',278),46,footY+28);
-    if(d9.checkerSig)fitImage(doc,d9.checkerSig,'PNG',341,footY+20,80,44);
-    if(d9.reviewerSig)fitImage(doc,d9.reviewerSig,'PNG',427,footY+20,80,44);
-    doc.setFontSize(6.5);doc.setTextColor(110,110,110);
-    doc.text('Checker',341,footY+77);doc.text('Reviewer',427,footY+77);
-    doc.setTextColor(0,0,0);
+    if(d9.checkerSig)fitImage(doc,d9.checkerSig,'PNG',341,footY+22,168,56);
     const photos=(data['dly_9.1']&&data['dly_9.1'].photos)||[];
     if(photos.length){
       let py=footY+84+22;
@@ -726,7 +708,7 @@ function buildPdf(){
         fitImage(doc,src,'JPEG',x+3,py+3,cellW-6,cellH-6);
       });
     }
-    fname=`DailyAirworthiness_${slug(data.trialPhase,'Phase')}_${slug(data.trialStage,'Stage')}_${slug(data.flightDate,'date')}.pdf`;
+    fname=`DailyAirworthiness_${slug(data.uavId,'UAV')}_${slug(data.trialPhase,'Phase')}_${slug(data.trialStage,'Stage')}_${slug(data.flightDate,'date')}.pdf`;
   }
   return {blob:doc.output('blob'),fname};
 }
