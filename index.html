@@ -52,6 +52,9 @@ body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:-ap
 .pf button{flex:1;padding:16px 8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:16px;font-weight:600;min-height:52px}
 .pf button.sel-pass{background:var(--pass);color:#fff;border-color:var(--pass)}
 .pf button.sel-fail{background:var(--fail);color:#fff;border-color:var(--fail)}
+.pf button.sel-na{background:#6b7280;color:#fff;border-color:#6b7280}
+.item.is-na .txt,.item.is-na .mini,.item.is-na .remarks{opacity:.5}
+.grpna{display:block;width:100%;margin:2px 0 12px;padding:12px;border-radius:9px;border:1px dashed var(--sub);background:transparent;color:var(--sub);font-size:14px;font-weight:600;min-height:44px}
 .mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .mini input{padding:13px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:16px;min-height:46px}
 .remarks{width:100%;padding:13px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:15px;min-height:46px}
@@ -152,99 +155,78 @@ const GNG=[
 ["Emergency Response","Recovery team ready","No recovery plan","Safety Officer"]]]
 ];
 
-const DLY_HEADER=[["uavId","UAV ID"],["uavWeight","UAV Weight"],["flightPlace","Flight Place"],["flightDate","Flight Date"]];
-const WING=["Cracks, dents and aesthetics","Screws fitment and loose parts","Fit and finish","Antenna mounting, routing and","Tightness check","Dacron zips are closed","FOD in the wing"];
-function wing(startSl,grp){return WING.map((t,i)=>({sl:startSl+i,group:grp,text:t}));}
+const DLY_HEADER=[["trialPhase","Trial Phase"],["trialStage","Trial Stage"],["flightPlace","Flight Place"],["flightDate","Flight Date"]];
+const WING=["Cracks, dents and aesthetics","Screws fitment and loose parts","Antenna mounting, routing and","FOD in the wing"];
+function wing(n,grp){return WING.map((t,i)=>({sl:"4."+n+"."+(i+1),group:grp,text:t}));}
 const DLY=[
-["1. Safety & Crew",[
- {sl:1,text:"Safety, V&V, Integration, Autopilot, FTI, and Propulsion teams are present."},
- {sl:2,text:"Team is briefed on flight trial emergency procedures."}]],
-["2. General Setup",[
- {sl:3,group:"Anchored Ground Run",text:"Ensure all the ropes are properly tightened"},
- {sl:4,group:"Anchored Ground Run",text:"Ensure propeller to rope clearance is safe for ground run."},
- {sl:5,group:"Tethered Ground Run",text:"Ensure all ropes properly tightened: Frame-to-crane point and all 4 landing legs",
-   extra:[["ropeFront","Front leg rope length"],["ropeRear","Rear leg rope length"],["ropeLeft","Left leg rope length"],["ropeRight","Right leg rope length"]]},
- {sl:6,group:"Tethered Ground Run",text:"Ensure propeller to rope clearance is safe for ground run."},
- {sl:7,text:"UAV positioned at the center of the test area & test area is clear."},
- {sl:8,text:"Fire extinguisher, first-aid kit, and emergency tools available and accessible."},
- {sl:9,text:"DG placed at safe & appropriate distance (noise/safety); dedicated junction boxes installed."}]],
-["3. Airframe & Structure",[
- ...wing(10,"Port-Side Wing Check"),
- ...wing(17,"Star-Board Side Wing Check"),
- {sl:24,group:"VTOL Propulsion",text:"Cable ties on the VTOL arms are in place, no loose cable holders."},
- {sl:25,group:"VTOL Propulsion",text:"HV terminals and LV terminals are intact and properly insulated."},
- {sl:26,group:"VTOL Propulsion",text:"VTOL Motor fitment and tightness"},
- {sl:27,group:"VTOL Propulsion",text:"Propeller direction (CW ; CCW), fitment and tightness"},
- {sl:28,group:"VTOL Propulsion",text:"The cooling line is not loose at the motor inlet/mount and not fouling with the motor."},
- {sl:29,group:"VTOL Propulsion",text:"Ensure no nicks, cuts or delamination to VTOL propellers"},
- {sl:30,group:"VTOL Propulsion",text:"No FOD in VTOL motors"},
- {sl:31,group:"FW Propulsion",text:"Cable ties on the FW arms are in place, no loose cable holders."},
- {sl:32,group:"FW Propulsion",text:"HV terminals and LV terminals are intact and properly insulated."},
- {sl:33,group:"FW Propulsion",text:"FW Motor fitment and tightness"},
- {sl:34,group:"FW Propulsion",text:"Propeller direction (CW ; CCW), fitment and tightness"},
- {sl:35,group:"FW Propulsion",text:"The cooling line is not loose at the motor mount and intersecting with the motor."},
- {sl:36,group:"FW Propulsion",text:"No FOD in FW motors"},
- {sl:37,group:"Tail Assembly",text:"No damages, dents, chipped edges/aesthetics on tail surface and control surface hinge points"},
- {sl:38,group:"Tail Assembly",text:"Control surface horn fitment and movement is ok"},
- {sl:39,group:"Tail Assembly",text:"Control rod movement, position and contact is ok."},
- {sl:40,group:"Tail Assembly",text:"Screws fitment is proper and no loose parts"},
- {sl:41,group:"Tail Assembly",text:"No FOD in Tail Assembly"},
- {sl:42,group:"HV Floor (No-Battery Area)",text:"No cracks, dents, chipped edges, aesthetics is ok"},
- {sl:43,group:"HV Floor (No-Battery Area)",text:"No loose cables and cable tie bases are not loose."},
- {sl:44,group:"HV Floor (No-Battery Area)",text:"LV battery fitment"},
- {sl:45,group:"HV Floor (No-Battery Area)",text:"PDU fasteners are tightened."},
- {sl:46,group:"HV Floor (No-Battery Area)",text:"ESC fasteners are tightened."},
- {sl:47,group:"HV Floor (No-Battery Area)",text:"Dacron velcro are intact."},
- {sl:48,group:"HV Floor (No-Battery Area)",text:"No FOD in the HV floor"},
- {sl:49,group:"HV Floor (Battery Area)",text:"Battery locking Velcro is intact."},
- {sl:50,group:"HV Floor (Battery Area)",text:"No leakages from battery cooling system."},
- {sl:51,group:"HV Floor (Battery Area)",text:"No loose cables."},
- {sl:52,group:"HV Floor (Battery Area)",text:"Electrical connector is intact."},
- {sl:53,group:"HV Floor (Battery Area)",text:"No FOD in the battery structure."},
- {sl:54,group:"LV Floor",text:"No loose cables."},
- {sl:55,group:"LV Floor",text:"Dynamic Port Nut is properly mounted."},
- {sl:56,group:"LV Floor",text:"Static Port nut is removed."},
- {sl:57,group:"LV Floor",text:"GNSS are intact and in the correct direction."},
- {sl:58,group:"Propulsion Cooling System",text:"No loose cooling pipes or its mounts."},
- {sl:59,group:"Propulsion Cooling System",text:"No leakage"},
- {sl:60,group:"Propulsion Cooling System",text:"Ensure PWM duty cycle is not between 11 to 55%.",extra:[["pwm","PWM %"]]},
- {sl:61,group:"Propulsion Cooling System",text:"Ensure reservoir is adequately filled with no leaks"},
- {sl:62,group:"Propulsion Cooling System",text:"Ensure radiator is securely mounted and free from any visible damage"}]],
-["4. Battery & PDU Check (Before Power On)",[
- {sl:63,group:"LV Battery Voltage",text:"The voltage should be between 12V to 13.8V."},
- {sl:64,group:"HV Battery Voltage",text:"Before installing on the aircraft, check all batteries read zero voltage."}]],
-["5. Battery & PDU Check (After Power On)",[
- {sl:65,group:"HV Battery Status",text:"HV battery voltage > 560",extra:[["hvVoltage","HV Battery Voltage"]]},
- {sl:66,group:"HV Battery Status",text:"Max cell temperature < 30°C. Cool battery before install if exceeded.",
-   extra:[["b1t","B1 Temp"],["b2t","B2 Temp"],["b3t","B3 Temp"],["b4t","B4 Temp"],["b5t","B5 Temp"],["b6t","B6 Temp"],
-          ["b1s","B1 SOC%"],["b2s","B2 SOC%"],["b3s","B3 SOC%"],["b4s","B4 SOC%"],["b5s","B5 SOC%"],["b6s","B6 SOC%"]]},
- {sl:67,group:"HV Battery Status",text:"The min cell voltage > 3.3"},
- {sl:68,group:"PDU Status",text:"PDU SOC% > 85",extra:[["pduSoc","PDU SOC %"]]},
- {sl:69,group:"PDU Status",text:"PDU State = 9 (Pass)"},
- {sl:70,group:"BMS Status",text:"BMS status verified by propulsion engineer"},
- {sl:71,group:"Beacon Functionality",text:"Ensure safety beacon is ON (Red Light)"}]],
-["6. Propulsion System Thermal Condition Check",[
- {sl:72,group:"Motor Temperature",text:"Initial motor temperatures recorded (°C)",
-   extra:[["m1","M1"],["m2","M2"],["m3","M3"],["m4","M4"],["m5","M5"],["m6","M6"],["m7","M7"],["m8","M8"]]},
- {sl:73,group:"ESC Temperature",text:"Initial ESC temperatures recorded (°C)",
-   extra:[["e1","E1"],["e2","E2"],["e3","E3"],["e4","E4"],["e5","E5"],["e6","E6"],["e7","E7"],["e8","E8"]]}]],
+["1. UAV Specification",[
+ {sl:"1.1",group:"UAV Weight",type:"values",fields:[["uavWeight","UAV Total weight","num"]]},
+ {sl:"1.2",group:"UAV CG Point",type:"values",fields:[["cgX","along x / longitudinal axis","num"],["cgY","along y / lateral axis","num"],["cgZ","along z / vertical axis","num"]]}]],
+["2. Safety & Crew",[
+ {sl:"2.1",text:"Safety, V&V, Integration, Autopilot, FTI, and Propulsion teams are present."},
+ {sl:"2.2",text:"Team is briefed on flight trial emergency procedures."}]],
+["3. General Setup",[
+ {sl:"3.1",type:"values",fields:[["setupDesc","Setup Description","area"]]},
+ {sl:"3.2",text:"UAV positioned at the center of the test area & test area is clear."},
+ {sl:"3.3",text:"Fire extinguisher, first-aid kit, and emergency tools available and accessible."},
+ {sl:"3.4",text:"DG placed at safe & appropriate distance considering noise and safety hazards; dedicated junction boxes installed at required locations."}]],
+["4. Airframe & Structure",[
+ ...wing(1,"1. Port-Side Wing Check"),
+ ...wing(2,"2. Star-Board Side Wing Check"),
+ {sl:"4.3.1",group:"3. VTOL Propulsion",text:"VTOL Motor fitment and tightness"},
+ {sl:"4.3.2",group:"3. VTOL Propulsion",text:"Propeller direction (CW ; CCW), fitment and tightness"},
+ {sl:"4.3.3",group:"3. VTOL Propulsion",text:"Cable ties on the VTOL arms are in place, no loose cable holders."},
+ {sl:"4.3.4",group:"3. VTOL Propulsion",text:"The cooling line is not loose at the motor inlet, motor mount and not fouling with the motor."},
+ {sl:"4.3.5",group:"3. VTOL Propulsion",text:"HV terminals and LV terminals are intact and properly insulated."},
+ {sl:"4.3.6",group:"3. VTOL Propulsion",text:"Ensure no nicks, cuts or delamination to VTOL propellers"},
+ {sl:"4.3.7",group:"3. VTOL Propulsion",text:"No FOD in VTOL motors"},
+ {sl:"4.4.1",group:"4. FW Propulsion",text:"Cable ties on the FW arms are in place, no loose cable holders."},
+ {sl:"4.4.2",group:"4. FW Propulsion",text:"HV terminals and LV terminals are intact and properly insulated."},
+ {sl:"4.4.3",group:"4. FW Propulsion",text:"FW Motor fitment and tightness"},
+ {sl:"4.4.4",group:"4. FW Propulsion",text:"Propeller direction (CW ; CCW), fitment and tightness"},
+ {sl:"4.4.6",group:"4. FW Propulsion",text:"No FOD in FW motors"},
+ {sl:"4.5.1",group:"5. Tail Assembly",text:"No damages, dents, chipped edges and aesthetics on the tail surface and control surface hinge points"},
+ {sl:"4.5.2",group:"5. Tail Assembly",text:"Control surface horn fitment and movement is ok"},
+ {sl:"4.5.3",group:"5. Tail Assembly",text:"Screws fitment is proper and no loose parts"},
+ {sl:"4.5.4",group:"5. Tail Assembly",text:"No FOD in Tail Assembly"},
+ {sl:"4.6.1",group:"6. HV Floor (No-Battery Area)",text:"No cracks, dents, chipped edges, aesthetics is ok. No loose cables and cable tie bases are not loose."},
+ {sl:"4.6.2",group:"6. HV Floor (No-Battery Area)",text:"LV battery fitment"},
+ {sl:"4.6.3",group:"6. HV Floor (No-Battery Area)",text:"PDU fasteners are tightened."},
+ {sl:"4.6.4",group:"6. HV Floor (No-Battery Area)",text:"ESC fasteners are tightened."},
+ {sl:"4.6.5",group:"6. HV Floor (No-Battery Area)",text:"No FOD in the HV floor"},
+ {sl:"4.7.1",group:"7. HV Floor (Battery Area)",text:"Battery locking Velcro is intact."},
+ {sl:"4.7.2",group:"7. HV Floor (Battery Area)",text:"No leakages from battery cooling system."},
+ {sl:"4.7.3",group:"7. HV Floor (Battery Area)",text:"No loose cables."},
+ {sl:"4.7.4",group:"7. HV Floor (Battery Area)",text:"Electrical connector is intact."},
+ {sl:"4.7.5",group:"7. HV Floor (Battery Area)",text:"No FOD in the battery structure."},
+ {sl:"4.8.1",group:"8. LV Floor",text:"No loose cables."},
+ {sl:"4.8.2",group:"8. LV Floor",text:"GNSS antenna are intact and in the correct direction."},
+ {sl:"4.9.1",group:"9. Propulsion Cooling System",text:"No loose cooling pipes or its mounts & No leakage"},
+ {sl:"4.9.2",group:"9. Propulsion Cooling System",text:"Ensure PWM duty cycle is not between 11 to 55%.",extra:[["pwm","PWM %"]]},
+ {sl:"4.9.3",group:"9. Propulsion Cooling System",text:"Ensure reservoir is adequately filled with no leaks"},
+ {sl:"4.9.4",group:"9. Propulsion Cooling System",text:"Ensure radiator is securely mounted and free from any visible damage"}]],
+["5. Battery & PDU Check (Before Power On)",[
+ {sl:"5.1",group:"LV Battery Voltage",text:"The Voltage should be between 12 V to 13.9 V."},
+ {sl:"5.2",group:"HV Battery Voltage",text:"Before installing on the aircraft, check all the batteries voltage should read zero voltage."}]],
+["6. Battery & PDU Check (After Power On)",[
+ {sl:"6.1",group:"HV Battery Status",text:"HV battery voltage > 560 ; The min cell voltage > 3.3",extra:[["hvVoltage","HV Battery Voltage"],["minCellVoltage","Minimum Cell Voltage"]]},
+ {sl:"6.2",group:"PDU Status",text:"PDU SOC% > 85",extra:[["pduSoc","PDU SOC"]]},
+ {sl:"6.3",group:"PDU Status",text:"PDU State = 9 (Pass)"},
+ {sl:"6.4",group:"Beacon Functionality",text:"Ensure safety beacon is ON (Red Light)"}]],
 ["7. Avionics & Software",[
- {sl:74,text:"Flight controller powered ON; firmware version verified. (Log FC changes in Firmware Config Logbook)"},
- {sl:75,text:"FTI sensors are calibrated and reporting correctly (LED on PCB confirms)"},
- {sl:76,text:"GCS Status Check (Green Light)"},
- {sl:77,text:"Communication link established with GCS."},
- {sl:78,text:"Control modes verified (ARM/DISARM, KILL switch)."},
- {sl:79,text:"Logging system armed and storage space available."}]],
-["8. Propulsion System Functionality Check",[
- {sl:80,text:"Turn ON propulsion system, run at lowest RPM. Check propeller direction & RPM in software GUI."}]],
-["9. Data Recording & Transmission",[
- {sl:81,group:"Camera Functionality",text:"Video recording is ok."},
- {sl:82,group:"Sound Meter Functionality",text:"Sound recording is ok"},
- {sl:83,group:"Communication Check",text:"Communication check completed with pilot and responsible team members."}]],
-["10. Other Details",[
- {sl:84,text:"Other details / checker signature",footer:true,extra:[["checkerSig","Checker Signature","sig"]]},
- {sl:85,text:"Photos (optional) — attach any relevant photos",footer:true,type:"photo"}]]
+ {sl:"7.1",text:"Flight controller powered ON; firmware version verified."},
+ {sl:"7.2",text:"FTI sensors are calibrated and reporting correctly"},
+ {sl:"7.3",text:"GCS Status Check (Green Light)"},
+ {sl:"7.4",text:"Communication link established with GCS."}]],
+["8. Data recording and transmission",[
+ {sl:"8.1",group:"Camera Functionality",text:"Video recording is ok."},
+ {sl:"8.2",group:"Sound Meter Functionality",text:"Sound recording is ok"},
+ {sl:"8.3",group:"Communication Check",text:"Communication check completed with pilot and responsible team members."}]],
+["9. Other details",[
+ {sl:"9",text:"Other details / Checker + Reviewer sign-off",footer:true,extra:[["checkerSig","Checker","sig"],["reviewerSig","Reviewer","sig"]]},
+ {sl:"9.1",text:"Photos (optional) — attach any relevant photos",footer:true,type:"photo"}]]
 ];
+const isCheckItem=it=>!it.footer&&it.type!=='values'&&it.type!=='photo';
 
 const LOGO_DATA_URL=document.querySelector('.topbar img').src;
 const BRAND_GREEN=[140,198,63];
@@ -255,7 +237,7 @@ let cur=null; // 'gng' | 'dly'
 let stepIdx=0;
 let steps=[]; // array of {title,render(),validate()}
 let data={};  // answers keyed
-const LS_KEY=t=>"yeti_draft_"+t;
+const LS_KEY=t=>"yeti_draft_"+t+(t==="dly"?"_v2":"");
 
 function loadDraft(t){try{const r=localStorage.getItem(LS_KEY(t));return r?JSON.parse(r):{};}catch(e){return {};}}
 function saveDraft(){try{localStorage.setItem(LS_KEY(cur),JSON.stringify(data));saveLastValues();toast("Draft saved");}catch(e){}}
@@ -356,7 +338,7 @@ function renderHome(){
   h.innerHTML='';
   const items=[
     {id:'gng',title:'Flight Trial GO / NO-GO Decision Matrix',sub:'IF_YETI_TD0_FTR_SOP_002 · '+GNG.reduce((a,c)=>a+c[1].length,0)+' checks across '+GNG.length+' categories',count:GNG.reduce((a,c)=>a+c[1].length,0)},
-    {id:'dly',title:'Daily Airworthiness Checklist',sub:'IF_YETI_TD0_FTR_CKT_005 · '+DLY.flatMap(s=>s[1]).filter(it=>!it.footer).length+' checks across '+DLY.length+' sections',count:DLY.reduce((a,s)=>a+s[1].length,0)}
+    {id:'dly',title:'Daily Airworthiness Checklist',sub:'IF_YETI_TD0_FTR_CKT_005 · '+DLY.flatMap(s=>s[1]).filter(isCheckItem).length+' checks across '+DLY.length+' sections',count:DLY.reduce((a,s)=>a+s[1].length,0)}
   ];
   items.forEach(it=>{
     const d=loadDraft(it.id);
@@ -389,8 +371,9 @@ function buildSteps(){
 const LAST_KEY='yeti_last_values';
 function loadLastValues(){try{return JSON.parse(localStorage.getItem(LAST_KEY)||'{}');}catch(e){return {};}}
 function saveLastValues(){try{
-  const keep=(({uavId,uavWeight,flightPlace})=>({uavId,uavWeight,flightPlace}))(data);
-  localStorage.setItem(LAST_KEY,JSON.stringify(keep));
+  const prev=loadLastValues();
+  ['uavId','trialPhase','trialStage','flightPlace'].forEach(k=>{if(data[k])prev[k]=data[k];});
+  localStorage.setItem(LAST_KEY,JSON.stringify(prev));
 }catch(e){}}
 
 function start(id){
@@ -398,9 +381,7 @@ function start(id){
   const isNew=Object.keys(data).length===0;
   if(isNew){
     const last=loadLastValues();
-    if(last.uavId)data.uavId=last.uavId;
-    if(last.uavWeight)data.uavWeight=last.uavWeight;
-    if(last.flightPlace)data.flightPlace=last.flightPlace;
+    (cur==='gng'?GNG_HEADER:DLY_HEADER).forEach(([key])=>{if(key!=='flightDate'&&last[key])data[key]=last[key];});
     data.flightDate=new Date().toISOString().slice(0,10);
   }
   document.getElementById('home').classList.add('hidden');
@@ -458,7 +439,20 @@ function renderStep(){
       body.appendChild(it);
     });
   }else if(s.type==='dly'){
-    s.items.forEach(item=>{
+    s.items.forEach((item,idx)=>{
+      if(item.group&&isCheckItem(item)&&(idx===0||s.items[idx-1].group!==item.group)){
+        const members=s.items.filter(x=>x.group===item.group&&isCheckItem(x));
+        if(members.length>=2){
+          const allNa=members.every(x=>(data['dly_'+x.sl]||{}).result==='na');
+          const gb=document.createElement('button');gb.type='button';gb.className='grpna';
+          gb.textContent=allNa?`Undo Not Available for "${item.group}"`:`Mark all of "${item.group}" as Not Available (not installed)`;
+          gb.onclick=()=>{
+            members.forEach(x=>{const kk='dly_'+x.sl;const dd=data[kk]||{};dd.result=allNa?null:'na';data[kk]=dd;});
+            saveDraft();renderStep();
+          };
+          body.appendChild(gb);
+        }
+      }
       const k='dly_'+item.sl;
       const d=data[k]||{};
       const it=document.createElement('div');it.className='item';
@@ -468,23 +462,39 @@ function renderStep(){
         body.appendChild(it);
         return;
       }
+      if(item.type==='values'){
+        const vhead=item.group||item.fields[0][1];
+        let vh=`<div class="txt">#${item.sl} — ${vhead}</div>`;
+        item.fields.forEach(([fk,lbl,kind])=>{
+          vh+=`<div class="field">`+((item.fields.length===1&&lbl===vhead)?'':`<label>${lbl}</label>`)+(kind==='area'
+            ?`<textarea class="remarks" rows="3" data-val="${fk}">${d[fk]||''}</textarea>`
+            :`<input type="number" step="any" value="${d[fk]||''}" data-val="${fk}">`)+`</div>`;
+        });
+        it.innerHTML=vh;
+        it.querySelectorAll('[data-val]').forEach(inp=>inp.oninput=e=>{d[e.target.dataset.val]=e.target.value;data[k]=d;});
+        body.appendChild(it);
+        return;
+      }
       let html=item.group?`<div class="grp">${item.group}</div>`:'';
       html+=`<div class="txt">#${item.sl} — ${item.text}</div>`;
       if(!item.footer){
-        html+=`<div class="pf"><button data-v="pass" class="${d.result==='pass'?'sel-pass':''}">✓ Pass</button><button data-v="fail" class="${d.result==='fail'?'sel-fail':''}">✕ Fail</button></div>`;
+        html+=`<div class="pf"><button data-v="pass" class="${d.result==='pass'?'sel-pass':''}">✓ Pass</button><button data-v="fail" class="${d.result==='fail'?'sel-fail':''}">✕ Fail</button><button data-v="na" class="${d.result==='na'?'sel-na':''}">Not Available</button></div>`;
       }
       const textExtras=(item.extra||[]).filter(x=>x[2]!=='sig');
       const sigExtras=(item.extra||[]).filter(x=>x[2]==='sig');
       if(textExtras.length){
-        html+='<div class="mini">'+textExtras.map(([k2,lbl])=>`<input type="number" inputmode="decimal" step="0.1" placeholder="${lbl}" value="${d[k2]||''}" data-x="${k2}">`).join('')+'</div>';
+        html+='<div class="mini">'+textExtras.map(([k2,lbl])=>`<input type="number" inputmode="decimal" step="any" placeholder="${lbl}" value="${d[k2]||''}" data-x="${k2}">`).join('')+'</div>';
       }
-      html+=`<textarea class="remarks" rows="1" placeholder="Remarks">${d.remarks||''}</textarea>`;
+      html+=`<textarea class="remarks" rows="${item.footer?3:1}" placeholder="${item.footer?'Other details':'Remarks'}">${d.remarks||''}</textarea>`;
       it.innerHTML=html;
       if(!item.footer){
+        const selCls={pass:'sel-pass',fail:'sel-fail',na:'sel-na'};
+        if(d.result==='na')it.classList.add('is-na');
         it.querySelectorAll('.pf button').forEach(btn=>btn.onclick=()=>{
           d.result=d.result===btn.dataset.v?null:btn.dataset.v;data[k]=d;
           it.querySelectorAll('.pf button').forEach(b=>b.className='');
-          if(d.result)it.querySelector(`.pf button[data-v="${d.result}"]`).className=d.result==='pass'?'sel-pass':'sel-fail';
+          if(d.result)it.querySelector(`.pf button[data-v="${d.result}"]`).className=selCls[d.result];
+          it.classList.toggle('is-na',d.result==='na');
         });
       }
       if(textExtras.length)it.querySelectorAll('[data-x]').forEach(inp=>inp.oninput=e=>{d[e.target.dataset.x]=e.target.value;data[k]=d;});
@@ -527,12 +537,13 @@ function renderReview(){
       <div class="summary-row"><span>NO-GO</span><b class="fail">${nogo}</b></div>
       <div class="summary-row"><span>Not yet decided</span><b>${blank}</b></div>`;
   }else{
-    const all=DLY.flatMap(s=>s[1]).filter(it=>!it.footer);
-    let pass=0,fail=0,blank=0;
-    all.forEach(it=>{const d=data['dly_'+it.sl]||{};if(d.result==='pass')pass++;else if(d.result==='fail')fail++;else blank++;});
+    const all=DLY.flatMap(s=>s[1]).filter(isCheckItem);
+    let pass=0,fail=0,na=0,blank=0;
+    all.forEach(it=>{const d=data['dly_'+it.sl]||{};if(d.result==='pass')pass++;else if(d.result==='fail')fail++;else if(d.result==='na')na++;else blank++;});
     el.innerHTML=`<div class="summary-row"><span>Total items</span><b>${all.length}</b></div>
       <div class="summary-row"><span>Pass</span><b class="pass">${pass}</b></div>
       <div class="summary-row"><span>Fail</span><b class="fail">${fail}</b></div>
+      <div class="summary-row"><span>Not available</span><b>${na}</b></div>
       <div class="summary-row"><span>Not checked</span><b>${blank}</b></div>`;
   }
 
@@ -566,16 +577,24 @@ function pageHeader(doc,title,docNo){
   doc.line(40,54,555,54);
   doc.setTextColor(0,0,0);
 }
+function fitImage(doc,src,fmt,x,y,w,h){
+  try{
+    const p=doc.getImageProperties(src);
+    const r=Math.min(w/p.width,h/p.height);
+    const iw=p.width*r,ih=p.height*r;
+    doc.addImage(src,fmt,x+(w-iw)/2,y+(h-ih)/2,iw,ih);
+  }catch(e){}
+}
 function checklistBox(doc,data,cell){
-  if(!(data.section==='body'&&(data.column.index===cell.pass||data.column.index===cell.fail)))return;
-  const raw=data.cell.raw;if(!raw||typeof raw!=='object')return;
+  if(!(data.section==='body'&&(data.column.index===cell.pass||data.column.index===cell.fail||data.column.index===cell.na)))return;
+  const raw=data.cell.raw;if(!raw||typeof raw!=='object'||!('checked' in raw))return;
   const size=7;
   const cx=data.cell.x+data.cell.width/2-size/2;
   const cy=data.cell.y+data.cell.height/2-size/2;
   doc.setDrawColor(140,140,140);doc.setLineWidth(0.6);
   doc.rect(cx,cy,size,size);
   if(raw.checked){
-    const col=data.column.index===cell.pass?[22,163,74]:[220,38,38];
+    const col=data.column.index===cell.pass?[22,163,74]:data.column.index===cell.na?[107,114,128]:[220,38,38];
     doc.setFillColor(col[0],col[1],col[2]);doc.rect(cx,cy,size,size,'F');
   }
 }
@@ -583,7 +602,7 @@ function buildPdf(){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'pt',format:'a4'});
   let fname;
-  const slug=s=>(s||'UAV').split(' ').join('_');
+  const slug=(s,fb)=>String(s||fb||'NA').replace(/[^A-Za-z0-9._-]+/g,'_');
   if(cur==='gng'){
     const title='FLIGHT TRIAL GO / NO-GO DECISION MATRIX',docNo='IF_YETI_TD0_FTR_SOP_002';
     pageHeader(doc,title,docNo);
@@ -618,7 +637,7 @@ function buildPdf(){
         }
       },
       didDrawPage:()=>pageHeader(doc,title,docNo)});
-    fname=`GoNoGo_${slug(data.uavId)}_${slug(data.flightDate)}.pdf`;
+    fname=`GoNoGo_${slug(data.uavId,'UAV')}_${slug(data.flightDate,'date')}.pdf`;
   }else{
     const title='DAILY AIRWORTHINESS CHECKLIST',docNo='IF_YETI_TD0_FTR_CKT_005';
     pageHeader(doc,title,docNo);
@@ -627,69 +646,87 @@ function buildPdf(){
       body:DLY_HEADER.map(([k,l])=>[{content:l,styles:{fontStyle:'bold',fillColor:[245,246,248],cellWidth:110}},data[k]||'']),
       didDrawPage:()=>pageHeader(doc,title,docNo)});
     const rows=[];
+    const groupCell=(g,n)=>({content:g,rowSpan:n,styles:{valign:'middle',fontStyle:'bold',fillColor:[245,246,248],fontSize:6.3}});
+    const physRows=it=>it.type==='values'?it.fields.length:1;
     DLY.forEach(([sec,items])=>{
       const filtered=items.filter(it=>!it.footer);
       if(!filtered.length)return;
-      rows.push([{content:sec,colSpan:6,styles:{fillColor:BRAND_DARK,textColor:255,fontStyle:'bold',fontSize:7.5}}]);
+      rows.push([{content:sec,colSpan:7,styles:{fillColor:BRAND_DARK,textColor:255,fontStyle:'bold',fontSize:7.5}}]);
       let i=0;
       while(i<filtered.length){
         const g=filtered[i].group;
         let runEnd=i;
         if(g){while(runEnd+1<filtered.length&&filtered[runEnd+1].group===g)runEnd++;}
-        const runLen=runEnd-i+1;
+        let runLen=0;for(let j=i;j<=runEnd;j++)runLen+=physRows(filtered[j]);
         for(let j=i;j<=runEnd;j++){
           const it=filtered[j];const d=data['dly_'+it.sl]||{};
+          if(it.type==='values'){
+            it.fields.forEach(([fk,lbl],ri)=>{
+              const row=[];
+              if(ri===0){
+                row.push({content:it.sl,rowSpan:it.fields.length,styles:{valign:'middle',halign:'center'}});
+                if(j===i)row.push(g?groupCell(g,runLen):'');
+              }
+              row.push(lbl,{content:d[fk]||'',colSpan:4});
+              rows.push(row);
+            });
+            continue;
+          }
           let remarks=d.remarks||'';
           if(it.extra){
             const ex=it.extra.filter(x=>x[2]!=='sig').map(([k2,lbl])=>d[k2]?`${lbl}: ${d[k2]}`:null).filter(Boolean).join('; ');
             if(ex)remarks=ex+(remarks?' | '+remarks:'');
           }
           const row=[it.sl];
-          if(j===i)row.push(g?{content:g,rowSpan:runLen,styles:{valign:'middle',fontStyle:'bold',fillColor:[245,246,248],fontSize:6.3}}:'');
-          row.push(it.text,{content:'',checked:d.result==='pass'},{content:'',checked:d.result==='fail'},remarks);
+          if(j===i)row.push(g?groupCell(g,runLen):'');
+          row.push(d.result==='na'?{content:it.text,styles:{textColor:[140,140,140]}}:it.text,{content:'',checked:d.result==='pass'},{content:'',checked:d.result==='fail'},{content:'',checked:d.result==='na'},remarks);
           rows.push(row);
         }
         i=runEnd+1;
       }
     });
     doc.autoTable({startY:doc.lastAutoTable.finalY+10,margin:{top:64,left:40,right:40},
-      head:[['#','Group','Checklist','Pass','Fail','Remarks']],
+      head:[['#','Group','Checklist','Pass','Fail','Not Available','Remarks']],
       body:rows,theme:'grid',styles:{fontSize:6.5,cellPadding:2.5,lineColor:[210,210,210],lineWidth:0.5,valign:'middle'},
       headStyles:{fillColor:BRAND_GREEN,textColor:255,fontStyle:'bold',fontSize:7.5},
-      columnStyles:{0:{cellWidth:18,halign:'center'},1:{cellWidth:82},2:{cellWidth:230},3:{cellWidth:24,halign:'center'},4:{cellWidth:24,halign:'center'},5:{cellWidth:90}},
-      didParseCell:d=>{if(d.section==='body'&&(d.column.index===3||d.column.index===4)&&d.cell.raw&&typeof d.cell.raw==='object')d.cell.text=[];},
-      didDrawCell:d=>checklistBox(doc,d,{pass:3,fail:4}),
+      columnStyles:{0:{cellWidth:30,halign:'center'},1:{cellWidth:78},2:{cellWidth:220},3:{cellWidth:24,halign:'center'},4:{cellWidth:24,halign:'center'},5:{cellWidth:46,halign:'center'},6:{cellWidth:90}},
+      didParseCell:d=>{if(d.section==='body'&&(d.column.index===3||d.column.index===4||d.column.index===5)&&d.cell.raw&&typeof d.cell.raw==='object'&&('checked' in d.cell.raw))d.cell.text=[];},
+      didDrawCell:d=>checklistBox(doc,d,{pass:3,fail:4,na:5}),
       didDrawPage:()=>pageHeader(doc,title,docNo)});
     let footY=doc.lastAutoTable.finalY+14;
-    if(footY>740){doc.addPage();pageHeader(doc,title,docNo);footY=74;}
-    const d84=data['dly_84']||{};
+    if(footY>720){doc.addPage();pageHeader(doc,title,docNo);footY=74;}
+    const d9=data['dly_9']||{};
     doc.setDrawColor(210,210,210);doc.setLineWidth(0.6);
-    doc.rect(40,footY,300,74);
-    doc.rect(345,footY,170,74);
+    doc.rect(40,footY,290,84);
+    doc.rect(335,footY,180,84);
     doc.setFont(undefined,'bold');doc.setFontSize(8);doc.setTextColor(0,0,0);
     doc.text('Other Details / Remarks',46,footY+14);
-    doc.text('Checker Signature',351,footY+14);
+    doc.text('Checker + Reviewer',341,footY+14);
     doc.setFont(undefined,'normal');doc.setFontSize(7.5);
-    doc.text(doc.splitTextToSize(d84.remarks||'—',288),46,footY+28);
-    if(d84.checkerSig)doc.addImage(d84.checkerSig,'PNG',351,footY+20,150,46);
-    const photos=(data['dly_85']&&data['dly_85'].photos)||[];
+    doc.text(doc.splitTextToSize(d9.remarks||'—',278),46,footY+28);
+    if(d9.checkerSig)fitImage(doc,d9.checkerSig,'PNG',341,footY+20,80,44);
+    if(d9.reviewerSig)fitImage(doc,d9.reviewerSig,'PNG',427,footY+20,80,44);
+    doc.setFontSize(6.5);doc.setTextColor(110,110,110);
+    doc.text('Checker',341,footY+77);doc.text('Reviewer',427,footY+77);
+    doc.setTextColor(0,0,0);
+    const photos=(data['dly_9.1']&&data['dly_9.1'].photos)||[];
     if(photos.length){
-      let py=footY+74+22;
+      let py=footY+84+22;
       if(py>700){doc.addPage();pageHeader(doc,title,docNo);py=74;}
       doc.setFont(undefined,'bold');doc.setFontSize(10);doc.setTextColor(0,0,0);
       doc.text('Photos',40,py);
       py+=12;
-      const cellW=165,cellH=125,gap=12,perRow=3;
+      const cellW=163,cellH=125,gap=12,perRow=3;
       photos.forEach((src,i)=>{
         const col=i%perRow;
         if(col===0&&i>0)py+=cellH+gap;
         if(py+cellH>760){doc.addPage();pageHeader(doc,title,docNo);py=74;}
         const x=40+col*(cellW+gap);
         doc.setDrawColor(210,210,210);doc.setLineWidth(0.6);doc.rect(x,py,cellW,cellH);
-        try{doc.addImage(src,'JPEG',x+3,py+3,cellW-6,cellH-6);}catch(e){}
+        fitImage(doc,src,'JPEG',x+3,py+3,cellW-6,cellH-6);
       });
     }
-    fname=`DailyAirworthiness_${slug(data.uavId)}_${slug(data.flightDate)}.pdf`;
+    fname=`DailyAirworthiness_${slug(data.trialPhase,'Phase')}_${slug(data.trialStage,'Stage')}_${slug(data.flightDate,'date')}.pdf`;
   }
   return {blob:doc.output('blob'),fname};
 }
