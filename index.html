@@ -37,6 +37,28 @@ body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:-ap
 .btn.ghost{background:transparent;color:var(--sub);border:1px solid var(--line)}
 .btn:disabled{opacity:.4}
 .hidden{display:none!important}
+.lk-top{display:flex;gap:10px;align-items:center;margin:14px 0 10px}
+.lk-top .btn{padding:12px 16px;min-height:48px}
+.lk-search{flex:1;width:100%;padding:14px 16px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--text);font-size:18px;min-height:52px}
+.lk-search:focus{outline:none;border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:11px 16px;font-size:15px;font-weight:600;min-height:44px;cursor:pointer}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.lk-note{color:var(--sub);font-size:13px;margin:4px 0 10px}
+.lk-card{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.lk-num{flex:0 0 auto;min-width:56px;height:56px;border-radius:12px;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700}
+.lk-body{flex:1;min-width:0}
+.lk-name{font-weight:700;font-size:14px;word-break:break-word}
+.lk-desc{font-size:14px;margin:4px 0 8px;color:var(--text)}
+.lk-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--sub)}
+.pill{padding:3px 10px;border-radius:999px;font-weight:700;font-size:12px}
+.pill.fatal{background:rgba(217,45,32,.15);color:#d92d20}
+.pill.warn{background:rgba(247,144,9,.18);color:#c26a00}
+.lk-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.lk-pair div{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13px;word-break:break-word}
+.lk-pair small{display:block;color:var(--sub);font-size:11px;margin-bottom:2px}
+.lk-pair .diff{border-color:#f79009}
+.lk-empty{text-align:center;color:var(--sub);padding:30px 10px}
 .item.missing,.field.missing{outline:3px solid #f79009;outline-offset:2px;border-radius:12px}
 .ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
 .dlg{background:var(--card);color:var(--text);border-radius:16px;max-width:520px;width:100%;max-height:85vh;display:flex;flex-direction:column;padding:20px}
@@ -111,6 +133,14 @@ select.dec.nogo{color:var(--fail)}
 <div class="wrap">
 
   <div id="home" class="home-grid"></div>
+
+  <div id="lookup" class="hidden">
+    <div class="lk-top"><button class="btn ghost" id="lkHome">← Home</button><input id="lkQ" class="lk-search" type="search" placeholder="Search name, number or description" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+    <div class="chips" id="lkTabs"></div>
+    <div class="chips" id="lkSev"></div>
+    <div class="lk-note" id="lkNote"></div>
+    <div id="lkList"></div>
+  </div>
 
   <div id="wizard" class="hidden">
     <div class="progress"><i id="progFill" style="width:0%"></i></div>
@@ -339,6 +369,88 @@ function mountSigPad(container,label,initialDataUrl,onChange){
 }
 
 /* ---------- HOME ---------- */
+/* ---------- BMS LOOKUP ---------- */
+// Source: Module Diag ID, PDU Diag ID and BMS state PDFs. Diag rows: [enum, name, description, severity, delay ms]
+const BMS_DATA={"module":[[1,"DIAG_ID_SYSTEM_MONITORING","The system monitoring module has detected a deviation from task timing limits","Warning",100],[2,"DIAG_ID_AFE_SPI","Issues with the SPI communication of the AFE","Fatal Error",100],[3,"DIAG_ID_AFE_SPI_BASE","Issues with the SPI communication of the AFE","Fatal Error",100],[4,"DIAG_ID_AFE_SPI_RED","Issues with the SPI communication of the AFE","Warning",100],[5,"DIAG_ID_AFE_COM_INTEGRITY","Error on the communication integrity of the AFE, e.g. PEC error for LTC","Fatal Error",100],[6,"DIAG_ID_AFE_COM_INTEGRITY_BASE","Error on the communication integrity of the AFE, e.g. PEC error for LTC","Warning",100],[7,"DIAG_ID_AFE_COM_INTEGRITY_RED","Error on the communication integrity of the AFE, e.g. PEC error for LTC","Warning",100],[8,"DIAG_ID_AFE_MUX","The multiplexer that is connected to the AFE does not react in an expected way","Fatal Error",100],[9,"DIAG_ID_CAN_TIMING","The BMS does not receive CAN messages or they are not inside the expected timing constraints","Warning",100],[10,"DIAG_ID_CAN_RX_QUEUE_FULL","The reception queue of the driver is full; no new messages can be received","Warning",100],[11,"DIAG_ID_CAN_TX_QUEUE_FULL","The transmission queue of the driver is full; all new messages will be lost","Warning",100],[12,"DIAG_ID_CAN_CC_RESPONDING","Current counter measurements on the CAN bus are missing or not inside expected timing constraints","Fatal Error",100],[13,"DIAG_ID_CAN_EC_RESPONDING","Energy counter measurements on the CAN bus are missing or not inside expected timing constraints","Warning",100],[14,"DIAG_ID_CURRENT_SENSOR_NOT_RESPONDING","Current sensor measurements on the CAN bus are missing or not inside expected timing constraints","Fatal Error",100],[15,"DIAG_ID_PLAUSIBILITY_CELL_VOLTAGE","Redundant measurement of the cell voltages has returned implausible values","Fatal Error",100],[16,"DIAG_ID_AFE_CELL_VOLTAGE_MEAS_ERROR","The AFE driver has determined a cell voltage measurement to be implausible","Fatal Error",100],[17,"DIAG_ID_AFE_CELL_VOLTAGE_MEAS_ERROR_BASE","The AFE driver has determined a cell voltage measurement to be implausible","Warning",100],[18,"DIAG_ID_AFE_CELL_VOLTAGE_MEAS_ERROR_RED","The AFE driver has determined a cell voltage measurement to be implausible","Warning",100],[19,"DIAG_ID_AFE_CELL_TEMPERATURE_MEAS_ERROR","The AFE driver has determined a cell temperature measurement to be implausible","Fatal Error",100],[20,"DIAG_ID_PLAUSIBILITY_CELL_TEMP","Redundant measurement of the cell temperatures has returned implausible values","Fatal Error",100],[21,"DIAG_ID_PLAUSIBILITY_CELL_VOLTAGE_SPREAD","The spread (difference between min and max values) of the cell voltages is implausibly high","Fatal Error",100],[22,"DIAG_ID_PLAUSIBILITY_CELL_TEMPERATURE_SPREAD","The spread (difference between min and max values) of the cell temperatures is implausibly high","Fatal Error",100],[23,"DIAG_ID_CELL_VOLTAGE_OVERVOLTAGE_MSL","Cell voltage limits violated","Fatal Error",100],[24,"DIAG_ID_CELL_VOLTAGE_OVERVOLTAGE_RSL","Cell voltage limits violated","Warning",100],[25,"DIAG_ID_CELL_VOLTAGE_OVERVOLTAGE_MOL","Cell voltage limits violated","Warning",100],[26,"DIAG_ID_CELL_VOLTAGE_UNDERVOLTAGE_MSL","Cell voltage limits violated","Fatal Error",100],[27,"DIAG_ID_CELL_VOLTAGE_UNDERVOLTAGE_RSL","Cell voltage limits violated","Warning",100],[28,"DIAG_ID_CELL_VOLTAGE_UNDERVOLTAGE_MOL","Cell voltage limits violated","Warning",100],[29,"DIAG_ID_TEMP_OVERTEMPERATURE_CHARGE_MSL","Temperature limits violated","Fatal Error",100],[30,"DIAG_ID_TEMP_OVERTEMPERATURE_CHARGE_RSL","Temperature limits violated","Warning",100],[31,"DIAG_ID_TEMP_OVERTEMPERATURE_CHARGE_MOL","Temperature limits violated","Warning",100],[32,"DIAG_ID_TEMP_OVERTEMPERATURE_DISCHARGE_MSL","Temperature limits violated","Fatal Error",100],[33,"DIAG_ID_TEMP_OVERTEMPERATURE_DISCHARGE_RSL","Temperature limits violated","Warning",100],[34,"DIAG_ID_TEMP_OVERTEMPERATURE_DISCHARGE_MOL","Temperature limits violated","Warning",100],[35,"DIAG_ID_TEMP_OVERTEMPERATURE_STANDBY_MSL","Temperature limits violated","Fatal Error",100],[36,"DIAG_ID_TEMP_OVERTEMPERATURE_STANDBY_RSL","Temperature limits violated","Warning",100],[37,"DIAG_ID_TEMP_OVERTEMPERATURE_STANDBY_MOL","Temperature limits violated","Warning",100],[38,"DIAG_ID_TEMP_UNDERTEMPERATURE_STANDBY_MSL","Temperature limits violated","Fatal Error",100],[39,"DIAG_ID_TEMP_UNDERTEMPERATURE_STANDBY_RSL","Temperature limits violated","Warning",100],[40,"DIAG_ID_TEMP_UNDERTEMPERATURE_STANDBY_MOL","Temperature limits violated","Warning",100],[41,"DIAG_ID_TEMP_UNDERTEMPERATURE_CHARGE_MSL","Temperature limits violated","Fatal Error",100],[42,"DIAG_ID_TEMP_UNDERTEMPERATURE_CHARGE_RSL","Temperature limits violated","Warning",100],[43,"DIAG_ID_TEMP_UNDERTEMPERATURE_CHARGE_MOL","Temperature limits violated","Warning",100],[44,"DIAG_ID_TEMP_UNDERTEMPERATURE_DISCHARGE_MSL","Temperature limits violated","Fatal Error",100],[45,"DIAG_ID_TEMP_UNDERTEMPERATURE_DISCHARGE_RSL","Temperature limits violated","Warning",100],[46,"DIAG_ID_TEMP_UNDERTEMPERATURE_DISCHARGE_MOL","Temperature limits violated","Warning",100],[47,"DIAG_ID_PACK_OVERCURRENT_CHARGE_MSL","Overcurrent on string-level","Fatal Error",100],[48,"DIAG_ID_PACK_OVERCURRENT_CHARGE_RSL","Overcurrent on string-level","Warning",100],[49,"DIAG_ID_PACK_OVERCURRENT_CHARGE_MOL","Overcurrent on string-level","Warning",100],[50,"DIAG_ID_PACK_OVERCURRENT_DISCHARGE_MSL","Overcurrent on string-level","Fatal Error",100],[51,"DIAG_ID_PACK_OVERCURRENT_DISCHARGE_RSL","Overcurrent on string-level","Warning",100],[52,"DIAG_ID_PACK_OVERCURRENT_DISCHARGE_MOL","Overcurrent on string-level","Warning",100],[53,"DIAG_ID_CURRENT_ON_OPEN_STRING","Current flowing on open string","Fatal Error",100],[54,"DIAG_ID_DEEP_DISCHARGE_DETECTED","The deep discharge flag has been set in persistent memory","Fatal Error",100],[55,"DIAG_ID_AFE_OPEN_WIRE","An open (broken) sense wire has been detected on the battery cell measurement","Warning",100],[56,"DIAG_ID_PLAUSIBILITY_PACK_VOLTAGE","The plausibility module has decided that the pack voltage is implausible","Fatal Error",100],[57,"DIAG_ID_INTERLOCK_FEEDBACK","The interlock feedback indicates it to be open (but it is expected to be closed)","Fatal Error",100],[58,"DIAG_ID_STRING_MODULE_CONTACTOR_FEEDBACK","The feedback on a string minus contactor does not match the expected value","Fatal Error",100],[59,"DIAG_ID_AFE_CELL_VOLTAGE_MEASUREMENT_TIMEOUT","The redundancy module has detected that the AFE cell voltage measurements are missing","Fatal Error",100],[60,"DIAG_ID_BASE_CELL_VOLTAGE_MEASUREMENT_TIMEOUT","The redundancy module has detected that the base cell voltage measurements are missing","Warning",100],[61,"DIAG_ID_REDUNDANCY0_CELL_VOLTAGE_MEASUREMENT_TIMEOUT","The redundancy module has detected that the redundancy0 cell voltage measurements are missing","Warning",100],[62,"DIAG_ID_BASE_CELL_TEMPERATURE_MEASUREMENT_TIMEOUT","The redundancy module has detected that the base cell temperature measurements are missing","Fatal Error",100],[63,"DIAG_ID_PRECHARGE_ABORT_REASON_VOLTAGE","Precharging aborted due to a too high voltage difference","Fatal Error",100],[64,"DIAG_ID_PRECHARGE_ABORT_REASON_CURRENT","Precharging aborted because measured current was too high","Fatal Error",100],[65,"DIAG_ID_CURRENT_MEASUREMENT_TIMEOUT","The redundancy module has detected that the current measurement on a string is not updated","Fatal Error",100],[66,"DIAG_ID_CURRENT_MEASUREMENT_ERROR","The redundancy module has detected a current measurement to be invalid","Fatal Error",100],[67,"DIAG_ID_CURRENT_SENSOR_V1_MEASUREMENT_TIMEOUT","The redundancy module has detected that the voltage 1 measurement of a current sensor is not updated","Fatal Error",100],[68,"DIAG_ID_CURRENT_SENSOR_V2_MEASUREMENT_TIMEOUT","The redundancy module has detected that the voltage 2 measurement of a current sensor is not updated","Fatal Error",100],[69,"DIAG_ID_CURRENT_SENSOR_V3_MEASUREMENT_TIMEOUT","The redundancy module has detected that the voltage 3 measurement of a current sensor is not updated","Warning",100],[70,"DIAG_ID_CURRENT_SENSOR_POWER_MEASUREMENT_TIMEOUT","The redundancy module has detected that the power measurement of a current sensor is not updated","Warning",100],[71,"DIAG_ID_POWER_MEASUREMENT_ERROR","The redundancy module has detected a power measurement to be invalid","Warning",100],[72,"DIAG_ID_INSULATION_MEASUREMENT_INVALID","The insulation measurement is valid or invalid","Warning",100],[73,"DIAG_ID_LOW_INSULATION_RESISTANCE_ERROR","A critical low insulation resistance has been measured","Warning",100],[74,"DIAG_ID_LOW_INSULATION_RESISTANCE_WARNING","A warnable low insulation resistance has been measured","Warning",100],[75,"DIAG_ID_INSULATION_GROUND_ERROR","Insulation monitoring has detected a ground error","Fatal Error",100],[76,"DIAG_ID_CURRENT_SENSOR_EVALUVATION_ERROR","Checks all the parameters of sensors individually","Fatal Error",100],[77,"DIAG_ID_I2C_PEX_ERROR","General error with the port expanders","Fatal Error",100],[78,"DIAG_ID_I2C_RTC_ERROR","I2C communication error with the RTC","Warning",100],[79,"DIAG_ID_RTC_CLOCK_INTEGRITY_ERROR","Clock integrity not garanteed error in RTC IC","Warning",100],[80,"DIAG_ID_RTC_BATTERY_LOW_ERROR","RTC IC battery low flag set","Warning",100],[81,"DIAG_ID_FRAM_READ_CRC_ERROR","CRC does not match when reading from the FRAM","Warning",100],[82,"DIAG_ID_ALERT_MODE","Critical error while opening the contactors. Fuse has not triggered","Fatal Error",100],[83,"DIAG_ID_THERMAL_RUNAWAY","Error for wide temparature change","Fatal Error",100],[84,"DIAG_ID_CHARGER_IMD_ERROR","Received charger IMD error","Fatal Error",100],[85,"DIAG_ID_IMD_CAN_TIMEOUT_ERROR","The redundancy module has detected that the IMD CAN message is not updated","Fatal Error",100],[86,"DIAG_ID_MASTER_CAN_TIMEOUT_ERROR","SuperMaster CAN RX message time'd out","Fatal Error",100],[87,"DIAG_ID_OBC_TIMEOUT_ERROR","OBC CAN RX message time'd out","Fatal Error",100],[88,"DIAG_ID_OBC_ALARM_ERROR","Received error flags from OBC","Fatal Error",100]],"pdu":[[1,"DIAG_ID_SYSTEM_MONITORING","The system monitoring module has detected a deviation from task timing limits","Warning",500],[2,"DIAG_ID_CAN_TIMING","The BMS does not receive CAN messages or they are not inside the expected timing constraints","Warning",500],[3,"DIAG_ID_CAN_RX_QUEUE_FULL","The reception queue the driver is full; no new messages can be received","Warning",500],[4,"DIAG_ID_CAN_TX_QUEUE_FULL","The transmission queue of the driver is full; all new messages will be lost","Warning",500],[5,"DIAG_ID_CAN_CC_RESPONDING","Current counter measurements on the CAN bus are missing or not inside expected timing constraints","Fatal Error",500],[6,"DIAG_ID_CAN_EC_RESPONDING","Energy counter measurements on the CAN bus are missing or not inside expected timing constraints","Warning",500],[7,"DIAG_ID_CURRENT_SENSOR_NOT_RESPONDING","Current sensor measurements on the CAN bus are missing or not inside expected timing constraints","Fatal Error",500],[8,"DIAG_ID_PACK_OVERCURRENT_CHARGE_MSL","Overcurrent on string-level","Fatal Error",500],[9,"DIAG_ID_PACK_OVERCURRENT_CHARGE_RSL","Overcurrent on string-level","Warning",500],[10,"DIAG_ID_PACK_OVERCURRENT_DISCHARGE_MSL","Overcurrent on string-level","Fatal Error",500],[11,"DIAG_ID_PACK_OVERCURRENT_DISCHARGE_RSL","Overcurrent on string-level","Warning",500],[12,"DIAG_ID_CURRENT_ON_OPEN_STRING","Current flowing on open string","Fatal Error",500],[13,"DIAG_ID_INTERLOCK_FEEDBACK","The interlock feedback indicates it to be open (but it is expected to be closed)","Warning",500],[14,"DIAG_ID_STRING_MINUS_CONTACTOR_FEEDBACK","The feedback on a string minus contactor does not match the expected value","Fatal Error",500],[15,"DIAG_ID_STRING_PLUS_CONTACTOR_FEEDBACK","The feedback on a string plus contactor does not match the expected value","Fatal Error",500],[16,"DIAG_ID_PRECHARGE_CONTACTOR_FEEDBACK","The feedback on a precharge contactor does not match the expected value","Warning",500],[17,"DIAG_ID_K1_RELAY_FEEDBACK","The feedback on a K1 contactor does not match the expected value","Fatal Error",500],[18,"DIAG_ID_K2_RELAY_FEEDBACK","The feedback on a K2 contactor does not match the expected value","Fatal Error",500],[19,"DIAG_ID_PRECHARGE_ABORT_REASON_VOLTAGE","Precharging aborted due to a too high voltage difference","Fatal Error",500],[20,"DIAG_ID_PRECHARGE_ABORT_REASON_CURRENT","Precharging aborted because measured current was too high","Fatal Error",500],[21,"DIAG_ID_CURRENT_MEASUREMENT_TIMEOUT","The redundancy module has detected that the current measurement on a string is not updated","Fatal Error",500],[22,"DIAG_ID_CURRENT_MEASUREMENT_ERROR","The redundancy module has detected a current measurement to be invalid","Fatal Error",500],[23,"DIAG_ID_CURRENT_SENSOR_V1_MEASUREMENT_TIMEOUT","The redundancy module has detected that the voltage 1 measurement of a current sensor is not updated","Fatal Error",500],[24,"DIAG_ID_CURRENT_SENSOR_V2_MEASUREMENT_TIMEOUT","The redundancy module has detected that the voltage 2 measurement of a current sensor is not updated","Fatal Error",500],[25,"DIAG_ID_CURRENT_SENSOR_V3_MEASUREMENT_TIMEOUT","The redundancy module has detected that the voltage 3 measurement of a current sensor is not updated","Warning",500],[26,"DIAG_ID_CURRENT_SENSOR_POWER_MEASUREMENT_TIMEOUT","The redundancy module has detected that the power measurement of a current sensor is not updated","Warning",500],[27,"DIAG_ID_POWER_MEASUREMENT_ERROR","The redundancy module has detected a power measurement to be invalid","Warning",500],[28,"DIAG_ID_INSULATION_MEASUREMENT_INVALID","The insulation measurement is valid or invalid","Warning",500],[29,"DIAG_ID_LOW_INSULATION_RESISTANCE_ERROR","A critical low insulation resistance has been measured","Fatal Error",500],[30,"DIAG_ID_LOW_INSULATION_RESISTANCE_WARNING","A warnable low insulation resistance has been measured","Warning",500],[31,"DIAG_ID_INSULATION_GROUND_ERROR","Insulation monitoring has detected a ground error","Warning",500],[32,"DIAG_ID_CURRENT_SENSOR_EVALUVATION_ERROR","Checks all the parameters of sensors individually","Warning",500],[33,"DIAG_ID_I2C_PEX_ERROR","General error with the port expanders","Fatal Error",500],[34,"DIAG_ID_I2C_RTC_ERROR","I2C communication error with the RTC","Warning",500],[35,"DIAG_ID_RTC_CLOCK_INTEGRITY_ERROR","Clock integrity not garanteed error in RTC IC","Warning",500],[36,"DIAG_ID_RTC_BATTERY_LOW_ERROR","RTC IC battery low flag set","Warning",500],[37,"DIAG_ID_FRAM_READ_CRC_ERROR","CRC does not match when reading from the FRAM","Warning",500],[38,"DIAG_ID_ALERT_MODE","Critical error while opening the contactors. Fuse has not triggered","Fatal Error",500],[39,"DIAG_ID_THERMAL_RUNAWAY","Error for wide temparature change","Fatal Error",500],[40,"DIAG_ID_CHARGER_IMD_ERROR","Received charger IMD error","Fatal Error",500],[41,"DIAG_ID_SLAVE_MODULE_DISCONNECTED","Required healthy modules are not present","Fatal Error",500],[42,"DIAG_ID_IMD_CAN_TIMEOUT_ERROR","The redundancy module has detected that the IMD CAN message is not updated","Fatal Error",500],[43,"DIAG_ID_MODULE_SOC_IMBALANCE","SoC diffrence between multiple modules is more then threshold","Fatal Error",500],[44,"DIAG_ID_MODULE1_BMS_STATE_ERROR","Module 1 is in error state","Fatal Error",500],[45,"DIAG_ID_MODULE2_BMS_STATE_ERROR","Module 2 is in error state","Fatal Error",500],[46,"DIAG_ID_MODULE3_BMS_STATE_ERROR","Module 3 is in error state","Fatal Error",500],[47,"DIAG_ID_MODULE4_BMS_STATE_ERROR","Module 4 is in error state","Fatal Error",500],[48,"DIAG_ID_MODULE5_BMS_STATE_ERROR","Module 5 is in error state","Fatal Error",500],[49,"DIAG_ID_MODULE6_BMS_STATE_ERROR","Module 6 is in error state","Fatal Error",500],[50,"DIAG_ID_MODULE_BMS_NOT_INTIALIZED","All healthy modules are not allocated/initialized","Fatal Error",500],[51,"DIAG_ID_MINIMUM_HEALTH_COUNT_NOT_REACHED","Minimum healthy modules are not present","Fatal Error",500],[52,"DIAG_ID_NO_MINIMUM_PACKVOLTAGE_ERROR","Before PDU contactor minimum packvoltage not reached","Fatal Error",500],[53,"DIAG_ID_HV_PRESENCE","Before K1 contactor, no HV is present","Fatal Error",500],[54,"DIAG_ID_MODULE_CONTACTOR_ON_OFF_TIMEOUT","Contactor not turning on after request time","Fatal Error",500]],"states":{"module":[[0,"BMS_STATEMACH_UNINITIALIZED"],[1,"BMS_STATEMACH_INITIALIZATION"],[2,"BMS_STATEMACH_INITIALIZED"],[3,"BMS_STATEMACH_IDLE"],[4,"BMS_STATEMACH_OPEN_CONTACTORS"],[5,"BMS_STATEMACH_STANDBY"],[8,"BMS_STATEMACH_DISCHARGE"],[9,"BMS_STATEMACH_CHARGE"],[10,"BMS_STATEMACH_ERROR"]],"pdu":[[0,"BMS_STATEMACH_UNINITIALIZED"],[1,"BMS_STATEMACH_INITIALIZATION"],[2,"BMS_STATEMACH_INITIALIZED"],[3,"BMS_STATEMACH_IDLE"],[4,"BMS_STATEMACH_OPEN_CONTACTORS"],[5,"BMS_STATEMACH_STANDBY"],[6,"BMS_STATEMACH_HEALTH_CHECK"],[7,"BMS_STATEMACH_HEALTH_OK_STANDBY"],[8,"BMS_STATEMACH_PRECHARGE"],[9,"BMS_STATEMACH_DISCHARGE"],[10,"BMS_STATEMACH_ERROR"]]}};
+const LK={tab:'module',sev:'all',q:''};
+const LK_TABS=[['module','Module Diag'],['pdu','PDU Diag'],['state','BMS State']];
+const lkEsc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const lkNorm=t=>String(t).toLowerCase().replace(/_/g,' ');
+function lkStateRows(){
+  const m=Object.fromEntries(BMS_DATA.states.module),p=Object.fromEntries(BMS_DATA.states.pdu);
+  const nums=[...new Set([...Object.keys(m),...Object.keys(p)].map(Number))].sort((a,b)=>a-b);
+  return nums.map(n=>[n,m[n]||null,p[n]||null]);
+}
+function lkMatch(hay,numStr,q){
+  const toks=lkNorm(q).split(/\s+/).filter(Boolean);
+  if(!toks.length)return 3;
+  let score=3;
+  for(const t of toks){
+    const isNum=/^\d+$/.test(t);
+    if(isNum&&numStr===t){score=Math.min(score,0);continue;}
+    if(hay.includes(t)){score=Math.min(score,isNum?2:1);continue;}
+    return -1;
+  }
+  return score;
+}
+function lkResults(tab){
+  const out=[];
+  if(tab==='state'){
+    lkStateRows().forEach(([n,m,p])=>{const sc=lkMatch(lkNorm((m||'')+' '+(p||'')),String(n),LK.q);if(sc>=0)out.push({sc,n,m,p});});
+  }else{
+    BMS_DATA[tab].forEach(([n,name,desc,sev,delay])=>{
+      if(LK.sev==='fatal'&&sev!=='Fatal Error')return;
+      if(LK.sev==='warn'&&sev!=='Warning')return;
+      const sc=lkMatch(lkNorm(name+' '+desc+' '+sev),String(n),LK.q);
+      if(sc>=0)out.push({sc,n,name,desc,sev,delay});
+    });
+  }
+  return out.sort((a,b)=>a.sc-b.sc||a.n-b.n);
+}
+function renderLookup(){
+  const tabs=document.getElementById('lkTabs');tabs.innerHTML='';
+  LK_TABS.forEach(([id,label])=>{
+    const b=document.createElement('button');b.className='chip'+(LK.tab===id?' on':'');
+    b.textContent=label+' ('+lkResults(id).length+')';
+    b.onclick=()=>{LK.tab=id;renderLookup();};
+    tabs.appendChild(b);
+  });
+  const sev=document.getElementById('lkSev');sev.innerHTML='';
+  if(LK.tab!=='state'){
+    [['all','All severities'],['fatal','Fatal Error'],['warn','Warning']].forEach(([id,label])=>{
+      const b=document.createElement('button');b.className='chip'+(LK.sev===id?' on':'');b.textContent=label;
+      b.onclick=()=>{LK.sev=id;renderLookup();};sev.appendChild(b);
+    });
+  }
+  const res=lkResults(LK.tab);
+  document.getElementById('lkNote').textContent=LK.tab==='state'
+    ?'Module and PDU use different numbers for some states. Orange = the two differ.'
+    :res.length+' of '+BMS_DATA[LK.tab].length+' shown';
+  const list=document.getElementById('lkList');
+  if(!res.length){list.innerHTML='<div class="lk-empty">No match here. Try another word or number, or check the other tabs.</div>';return;}
+  list.innerHTML=res.map(r=>{
+    if(LK.tab==='state'){
+      const diff=r.m!==r.p;
+      const nm=x=>x?lkEsc(x.replace('BMS_STATEMACH_','')):'—';
+      return `<div class="lk-card"><div class="lk-num">${r.n}</div><div class="lk-body"><div class="lk-pair"><div class="${diff?'diff':''}"><small>Module</small>${nm(r.m)}</div><div class="${diff?'diff':''}"><small>PDU</small>${nm(r.p)}</div></div></div></div>`;
+    }
+    const fatal=r.sev==='Fatal Error';
+    return `<div class="lk-card"><div class="lk-num">${r.n}</div><div class="lk-body"><div class="lk-name">${lkEsc(r.name)}</div><div class="lk-desc">${lkEsc(r.desc)}</div><div class="lk-meta"><span class="pill ${fatal?'fatal':'warn'}">${r.sev}</span><span>Delay ${r.delay} ms</span></div></div></div>`;
+  }).join('');
+}
+function openLookup(){
+  document.getElementById('home').classList.add('hidden');
+  document.getElementById('wizard').classList.add('hidden');
+  document.getElementById('review').classList.add('hidden');
+  document.getElementById('navrow').classList.add('hidden');
+  document.getElementById('lookup').classList.remove('hidden');
+  document.getElementById('topTitle').textContent='BMS Diagnostic Lookup';
+  document.getElementById('lkQ').value=LK.q;
+  renderLookup();window.scrollTo(0,0);
+}
+document.getElementById('lkQ').oninput=e=>{LK.q=e.target.value;renderLookup();};
+document.getElementById('lkHome').onclick=()=>renderHome();
+
 function renderHome(){
   const h=document.getElementById('home');
   h.innerHTML='';
@@ -354,9 +466,13 @@ function renderHome(){
     c.onclick=()=>start(it.id);
     h.appendChild(c);
   });
+  const lk=document.createElement('div');lk.className='card';
+  lk.innerHTML=`<h2>BMS Diagnostic Lookup</h2><p>Module &amp; PDU diag IDs · BMS states · ${BMS_DATA.module.length+BMS_DATA.pdu.length} diag codes</p><div class="meta">Search by name, number or description</div>`;
+  lk.onclick=openLookup;h.appendChild(lk);
   document.getElementById('home').classList.remove('hidden');
   document.getElementById('wizard').classList.add('hidden');
   document.getElementById('review').classList.add('hidden');
+  document.getElementById('lookup').classList.add('hidden');
   document.getElementById('navrow').classList.add('hidden');
   document.getElementById('topTitle').textContent='YETI Flight Checklists';
 }
