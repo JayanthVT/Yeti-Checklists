@@ -37,6 +37,14 @@ body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:-ap
 .btn.ghost{background:transparent;color:var(--sub);border:1px solid var(--line)}
 .btn:disabled{opacity:.4}
 .hidden{display:none!important}
+.item.missing,.field.missing{outline:3px solid #f79009;outline-offset:2px;border-radius:12px}
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+.dlg{background:var(--card);color:var(--text);border-radius:16px;max-width:520px;width:100%;max-height:85vh;display:flex;flex-direction:column;padding:20px}
+.dlg h3{margin:0 0 6px;font-size:18px}
+.dlg p{margin:0 0 10px;color:var(--sub);font-size:14px}
+.dlg ul{margin:0 0 14px;padding:0 0 0 20px;overflow:auto;font-size:15px;line-height:1.5}
+.dlg .acts{display:flex;gap:10px}
+.dlg .acts .btn{flex:1}
 .progress{height:5px;background:var(--line);border-radius:3px;margin:14px 0;overflow:hidden}
 .progress i{display:block;height:100%;background:var(--accent)}
 .section-title{font-size:19px;margin:6px 0 2px}
@@ -56,6 +64,11 @@ body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:-ap
 .item.is-na .txt,.item.is-na .mini,.item.is-na .remarks{opacity:.5}
 .mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .mini input{padding:13px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:16px;min-height:46px}
+.micwrap{position:relative}
+.micwrap .remarks{padding-right:54px}
+.mic{position:absolute;right:6px;top:6px;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:20px;line-height:1;cursor:pointer;padding:0}
+.mic.rec{background:#d92d20;border-color:#d92d20;color:#fff;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.6}}
 .remarks{width:100%;padding:13px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:15px;min-height:46px}
 .navrow{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line);display:flex;gap:10px;justify-content:space-between;max-width:820px;margin:0 auto}
 .navrow .spacer{flex:1}
@@ -393,6 +406,7 @@ function start(id){
 function goHome(){saveDraft();saveLastValues();renderHome();}
 
 function renderStep(){
+  stopVoice();
   const s=steps[stepIdx];
   document.getElementById('progFill').style.width=((stepIdx)/(steps.length-1)*100)+'%';
   if(s.type==='review'){
@@ -411,7 +425,7 @@ function renderStep(){
   const body=document.getElementById('stepBody');body.innerHTML='';
   if(s.type==='header'){
     s.fields.forEach(([key,label])=>{
-      const f=document.createElement('div');f.className='field';
+      const f=document.createElement('div');f.className='field';f.dataset.key='hdr_'+key;
       const type=key==='flightDate'?'date':key==='flightTime'?'time':'text';
       f.innerHTML=`<label>${label}</label><input type="${type}" value="${data[key]||''}" data-k="${key}">`;
       f.querySelector('input').oninput=e=>{data[key]=e.target.value;};
@@ -421,7 +435,7 @@ function renderStep(){
     s.rows.forEach(([param,go,nogo,resp])=>{
       const k='gng_'+s.cat+'_'+param;
       const d=data[k]||{};
-      const it=document.createElement('div');it.className='item';
+      const it=document.createElement('div');it.className='item';it.dataset.key=k;
       it.innerHTML=`<div class="txt"><b>${param}</b></div>
         <div class="info">GO: ${go}<br>NO-GO: ${nogo}<br>Responsible: ${resp}</div>
         <select class="dec ${d.decision==='GO'?'go':d.decision==='NO-GO'?'nogo':''}">
@@ -442,7 +456,7 @@ function renderStep(){
     s.items.forEach(item=>{
       const k='dly_'+item.sl;
       const d=data[k]||{};
-      const it=document.createElement('div');it.className='item';
+      const it=document.createElement('div');it.className='item';it.dataset.key=k;
       if(item.type==='photo'){
         it.innerHTML=`<div class="txt">#${item.sl} — ${item.text}</div>`;
         mountPhotoPicker(it,d.photos||[],val=>{d.photos=val;data[k]=d;});
@@ -455,7 +469,7 @@ function renderStep(){
         item.fields.forEach(([fk,lbl,kind])=>{
           vh+=`<div class="field">`+((item.fields.length===1&&lbl===vhead)?'':`<label>${lbl}</label>`)+(kind==='area'
             ?`<textarea class="remarks" rows="3" data-val="${fk}">${d[fk]||''}</textarea>`
-            :`<input type="number" step="any" value="${d[fk]||''}" data-val="${fk}">`)+`</div>`;
+            :`<input type="text" autocomplete="off" value="${d[fk]||''}" data-val="${fk}">`)+`</div>`;
         });
         it.innerHTML=vh;
         it.querySelectorAll('[data-val]').forEach(inp=>inp.oninput=e=>{d[e.target.dataset.val]=e.target.value;data[k]=d;});
@@ -470,7 +484,7 @@ function renderStep(){
       const textExtras=(item.extra||[]).filter(x=>x[2]!=='sig');
       const sigExtras=(item.extra||[]).filter(x=>x[2]==='sig');
       if(textExtras.length){
-        html+='<div class="mini">'+textExtras.map(([k2,lbl])=>`<input type="number" inputmode="decimal" step="any" placeholder="${lbl}" value="${d[k2]||''}" data-x="${k2}">`).join('')+'</div>';
+        html+='<div class="mini">'+textExtras.map(([k2,lbl])=>`<input type="text" autocomplete="off" placeholder="${lbl}" value="${d[k2]||''}" data-x="${k2}">`).join('')+'</div>';
       }
       html+=`<textarea class="remarks" rows="${item.footer?3:1}" placeholder="${item.footer?'Other details':'Remarks'}">${d.remarks||''}</textarea>`;
       it.innerHTML=html;
@@ -490,12 +504,77 @@ function renderStep(){
       body.appendChild(it);
     });
   }
+  body.querySelectorAll('textarea.remarks').forEach(addMic);
   document.getElementById('btnBack').disabled=stepIdx===0;
   document.getElementById('btnNext').textContent='Next';
   document.getElementById('btnNext').onclick=next;
 }
 
-function next(){if(stepIdx<steps.length-1){saveDraft();stepIdx++;renderStep();window.scrollTo(0,0);}}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let activeRec=null,activeBtn=null;
+function stopVoice(){if(activeRec){try{activeRec.stop();}catch(e){}}if(activeBtn)activeBtn.classList.remove('rec');activeRec=null;activeBtn=null;}
+function addMic(ta){
+  if(!SR||ta.parentNode.classList.contains('micwrap'))return;
+  const w=document.createElement('div');w.className='micwrap';
+  ta.parentNode.insertBefore(w,ta);w.appendChild(ta);
+  const b=document.createElement('button');b.type='button';b.className='mic';b.textContent='🎤';b.title='Speak';
+  w.appendChild(b);
+  b.onclick=()=>{
+    if(activeBtn===b){stopVoice();return;}
+    stopVoice();
+    const rec=new SR();rec.lang='en-IN';rec.interimResults=false;rec.continuous=true;
+    rec.onresult=ev=>{
+      let t='';for(let i=ev.resultIndex;i<ev.results.length;i++){if(ev.results[i].isFinal)t+=ev.results[i][0].transcript;}
+      t=t.trim();if(!t)return;
+      ta.value=(ta.value?ta.value.replace(/\s*$/,' '):'')+t;
+      ta.dispatchEvent(new Event('input'));
+    };
+    rec.onerror=ev=>{if(ev.error==='not-allowed'||ev.error==='service-not-allowed')alert('Microphone permission is blocked. Allow the microphone for this site in the browser settings.');else if(ev.error==='network')alert('Voice typing needs an internet connection.');stopVoice();};
+    rec.onend=()=>{if(activeRec===rec)stopVoice();};
+    activeRec=rec;activeBtn=b;b.classList.add('rec');
+    try{rec.start();}catch(e){stopVoice();}
+  };
+}
+
+function missingFor(s){
+  const m=[];
+  if(s.type==='header'){
+    s.fields.forEach(([key,label])=>{if(!String(data[key]||'').trim())m.push({key:'hdr_'+key,label:label+' is empty'});});
+  }else if(s.type==='gng'){
+    s.rows.forEach(([param])=>{const k='gng_'+s.cat+'_'+param;if(!(data[k]||{}).decision)m.push({key:k,label:param+' - no GO / NO-GO decision'});});
+  }else if(s.type==='dly'){
+    s.items.forEach(item=>{
+      const k='dly_'+item.sl,d=data[k]||{};
+      if(item.type==='photo')return;
+      if(item.type==='values'){
+        const empty=item.fields.filter(([fk])=>!String(d[fk]||'').trim()).map(f=>f[1]);
+        if(empty.length)m.push({key:k,label:'#'+item.sl+' - '+empty.join(', ')+' not entered'});
+      }else if(item.footer){
+        (item.extra||[]).filter(x=>x[2]==='sig').forEach(([k2,lbl])=>{if(!d[k2])m.push({key:k,label:'#'+item.sl+' - '+lbl+' missing'});});
+      }else if(!d.result)m.push({key:k,label:'#'+item.sl+' - '+item.text+' not checked'});
+    });
+  }
+  return m;
+}
+function advance(){if(stepIdx<steps.length-1){saveDraft();stepIdx++;renderStep();window.scrollTo(0,0);}}
+function next(){
+  if(stepIdx>=steps.length-1)return;
+  const miss=missingFor(steps[stepIdx]);
+  if(!miss.length){advance();return;}
+  const ovl=document.createElement('div');ovl.className='ovl';ovl.id='warnOvl';
+  const li=miss.map(x=>'<li>'+x.label.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</li>').join('');
+  ovl.innerHTML='<div class="dlg"><h3>Some items are not completed</h3><p>'+miss.length+' item(s) on this page still need attention:</p><ul>'+li+'</ul><div class="acts"><button class="btn secondary" id="warnCancel">Go back &amp; fix</button><button class="btn" id="warnGo">Continue anyway</button></div></div>';
+  document.body.appendChild(ovl);
+  const close=()=>ovl.remove();
+  document.getElementById('warnGo').onclick=()=>{close();advance();};
+  document.getElementById('warnCancel').onclick=()=>{
+    close();
+    document.querySelectorAll('.missing').forEach(e=>e.classList.remove('missing'));
+    let first=null;
+    miss.forEach(x=>{const e=document.querySelector('[data-key="'+x.key+'"]');if(e){e.classList.add('missing');if(!first)first=e;}});
+    if(first&&first.scrollIntoView)first.scrollIntoView({block:'center',behavior:'smooth'});
+  };
+}
 function back(){if(stepIdx>0){stepIdx--;renderStep();window.scrollTo(0,0);}else goHome();}
 document.getElementById('btnNext').onclick=next;
 document.getElementById('btnBack').onclick=back;
